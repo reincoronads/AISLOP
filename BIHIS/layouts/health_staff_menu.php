@@ -40,23 +40,3 @@
     </ul>
   </li>
 </ul>
-
-<style>
-.hover-bg:hover {
-  background-color: #34495e;
-  transition: background-color 0.3s ease;
-}
-.hover-bg-sm:hover {
-  background-color: #3d566e;
-  transition: background-color 0.3s ease;
-}
-.submenu-toggle[aria-expanded="true"] .fa-chevron-down {
-  transform: rotate(180deg);
-  transition: transform 0.3s ease;
-}
-.collapse.show {
-  background-color: #2c3e50;
-  border-radius: 0.375rem;
-  margin: 0.25rem 0;
-}
-</style>

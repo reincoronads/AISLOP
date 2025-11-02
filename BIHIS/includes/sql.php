@@ -1,5 +1,4 @@
 <?php
-  require_once('includes/load.php');
 
 /*--------------------------------------------------------------*/
 /* Function for find all database table rows by table name
@@ -54,7 +53,6 @@ function delete_by_id($table,$id)
 /*--------------------------------------------------------------*/
 /* Function for Count id  By table name
 /*--------------------------------------------------------------*/
-
 function count_by_id($table){
   global $db;
   if(tableExists($table))
@@ -96,27 +94,6 @@ function tableExists($table){
     }
    return false;
   }
-  /*--------------------------------------------------------------*/
-  /* Login with the data provided in $_POST,
-  /* coming from the login_v2.php form.
-  /* If you used this method then remove authenticate function.
- /*--------------------------------------------------------------*/
-   function authenticate_v2($username='', $password='') {
-     global $db;
-     $username = $db->escape($username);
-     $password = $db->escape($password);
-     $sql  = sprintf("SELECT id,username,password,user_level FROM users WHERE username ='%s' LIMIT 1", $username);
-     $result = $db->query($sql);
-     if($db->num_rows($result)){
-       $user = $db->fetch_assoc($result);
-       $password_request = sha1($password);
-       if($password_request === $user['password'] ){
-         return $user;
-       }
-     }
-    return false;
-   }
-
 
   /*--------------------------------------------------------------*/
   /* Find current log in user by session id
@@ -150,7 +127,6 @@ function tableExists($table){
   /*--------------------------------------------------------------*/
   /* Function to update the last log in of a user
   /*--------------------------------------------------------------*/
-
  function updateLastLogIn($user_id)
 	{
 		global $db;
@@ -160,16 +136,6 @@ function tableExists($table){
     return ($result && $db->affected_rows() === 1 ? true : false);
 	}
 
-  /*--------------------------------------------------------------*/
-  /* Find all Group name
-  /*--------------------------------------------------------------*/
-  function find_by_groupName($val)
-  {
-    global $db;
-    $sql = "SELECT group_name FROM user_groups WHERE group_name = '{$db->escape($val)}' LIMIT 1 ";
-    $result = $db->query($sql);
-    return($db->num_rows($result) === 0 ? true : false);
-  }
   /*--------------------------------------------------------------*/
   /* Find group level
   /*--------------------------------------------------------------*/
@@ -186,15 +152,11 @@ function tableExists($table){
    function page_require_level($require_level){
      global $session;
      $current_user = current_user();
-     $login_level = find_by_groupLevel($current_user['user_level']);
+     
      //if user not login
      if (!$session->isUserLoggedIn(true)):
             $session->msg('d','Please login...');
             redirect('index.php', false);
-      //if Group status Deactive
-     elseif($login_level['group_status'] === '0'):
-           $session->msg('d','This level user has been band!');
-           redirect('home.php',false);
       //cheackin log in User level and Require level is Less than or equal to
      elseif($current_user['user_level'] <= (int)$require_level):
               return true;
@@ -202,154 +164,107 @@ function tableExists($table){
             $session->msg("d", "Sorry! you dont have permission to view the page.");
             redirect('home.php', false);
         endif;
-
      }
-   /*--------------------------------------------------------------*/
-   /* Function for Finding all product name
-   /* JOIN with categorie  and media database table
-   /*--------------------------------------------------------------*/
-  function join_product_table(){
-     global $db;
-     $sql  =" SELECT p.id,p.name,p.quantity,p.buy_price,p.sale_price,p.media_id,p.date,c.name";
-    $sql  .=" AS categorie,m.file_name AS image";
-    $sql  .=" FROM products p";
-    $sql  .=" LEFT JOIN categories c ON c.id = p.categorie_id";
-    $sql  .=" LEFT JOIN media m ON m.id = p.media_id";
-    $sql  .=" ORDER BY p.id ASC";
-    return find_by_sql($sql);
 
-   }
-  /*--------------------------------------------------------------*/
-  /* Function for Finding all product name
-  /* Request coming from ajax.php for auto suggest
-  /*--------------------------------------------------------------*/
+/*--------------------------------------------------------------*/
+/* INVENTORY MANAGEMENT FUNCTIONS
+/*--------------------------------------------------------------*/
 
-   function find_product_by_title($product_name){
+  /*--------------------------------------------------------------*/
+  /* Function for Finding all medicines with categories
+  /*--------------------------------------------------------------*/
+  function find_all_medicines(){
      global $db;
-     $p_name = remove_junk($db->escape($product_name));
-     $sql = "SELECT name FROM products WHERE name like '%$p_name%' LIMIT 5";
-     $result = find_by_sql($sql);
-     return $result;
+     $sql  = "SELECT p.*, c.name as category_name ";
+     $sql .= "FROM products p ";
+     $sql .= "LEFT JOIN categories c ON c.id = p.categorie_id ";
+     $sql .= "ORDER BY p.name ASC";
+     return find_by_sql($sql);
    }
 
   /*--------------------------------------------------------------*/
-  /* Function for Finding all product info by product title
-  /* Request coming from ajax.php
+  /* Function for Update product quantity (for dispensing)
   /*--------------------------------------------------------------*/
-  function find_all_product_info_by_title($title){
-    global $db;
-    $sql  = "SELECT * FROM products ";
-    $sql .= " WHERE name ='{$title}'";
-    $sql .=" LIMIT 1";
-    return find_by_sql($sql);
-  }
-
-  /*--------------------------------------------------------------*/
-  /* Function for Update product quantity
-  /*--------------------------------------------------------------*/
-  function update_product_qty($qty,$p_id){
+  function update_product_qty($qty, $p_id){
     global $db;
     $qty = (int) $qty;
     $id  = (int)$p_id;
-    $sql = "UPDATE products SET quantity=quantity -'{$qty}' WHERE id = '{$id}'";
+    $sql = "UPDATE products SET quantity = quantity - '{$qty}' WHERE id = '{$id}'";
     $result = $db->query($sql);
     return($db->affected_rows() === 1 ? true : false);
-
   }
+
   /*--------------------------------------------------------------*/
-  /* Function for Display Recent product Added
+  /* Function for Update product quantity (for receiving/adding stock)
   /*--------------------------------------------------------------*/
- function find_recent_product_added($limit){
+  function add_product_qty($qty, $p_id){
+    global $db;
+    $qty = (int) $qty;
+    $id  = (int)$p_id;
+    $sql = "UPDATE products SET quantity = quantity + '{$qty}' WHERE id = '{$id}'";
+    $result = $db->query($sql);
+    return($db->affected_rows() === 1 ? true : false);
+  }
+
+  /*--------------------------------------------------------------*/
+  /* Function for Display Recent medicines Added
+  /*--------------------------------------------------------------*/
+ function find_recent_medicines_added($limit){
    global $db;
-   $sql   = " SELECT p.id,p.name,p.sale_price,p.media_id,c.name AS categorie,";
-   $sql  .= "m.file_name AS image FROM products p";
-   $sql  .= " LEFT JOIN categories c ON c.id = p.categorie_id";
-   $sql  .= " LEFT JOIN media m ON m.id = p.media_id";
-   $sql  .= " ORDER BY p.id DESC LIMIT ".$db->escape((int)$limit);
+   $sql   = "SELECT p.id, p.name, p.quantity, p.unit, c.name AS category_name, p.expiry_date ";
+   $sql  .= "FROM products p ";
+   $sql  .= "LEFT JOIN categories c ON c.id = p.categorie_id ";
+   $sql  .= "ORDER BY p.id DESC LIMIT ".$db->escape((int)$limit);
    return find_by_sql($sql);
  }
- /*--------------------------------------------------------------*/
- /* Function for Find Highest saleing Product
- /*--------------------------------------------------------------*/
- function find_higest_saleing_product($limit){
-   global $db;
-   $sql  = "SELECT p.name, COUNT(s.product_id) AS totalSold, SUM(s.qty) AS totalQty";
-   $sql .= " FROM sales s";
-   $sql .= " LEFT JOIN products p ON p.id = s.product_id ";
-   $sql .= " GROUP BY s.product_id";
-   $sql .= " ORDER BY SUM(s.qty) DESC LIMIT ".$db->escape((int)$limit);
-   return $db->query($sql);
- }
- /*--------------------------------------------------------------*/
- /* Function for find all sales
- /*--------------------------------------------------------------*/
- function find_all_sale(){
-   global $db;
-   $sql  = "SELECT s.id,s.qty,s.price,s.date,p.name";
-   $sql .= " FROM sales s";
-   $sql .= " LEFT JOIN products p ON s.product_id = p.id";
-   $sql .= " ORDER BY s.date DESC";
-   return find_by_sql($sql);
- }
- /*--------------------------------------------------------------*/
- /* Function for Display Recent sale
- /*--------------------------------------------------------------*/
-function find_recent_sale_added($limit){
-  global $db;
-  $sql  = "SELECT s.id,s.qty,s.price,s.date,p.name";
-  $sql .= " FROM sales s";
-  $sql .= " LEFT JOIN products p ON s.product_id = p.id";
-  $sql .= " ORDER BY s.date DESC LIMIT ".$db->escape((int)$limit);
-  return find_by_sql($sql);
-}
+
+  /*--------------------------------------------------------------*/
+  /* Function for Find low stock medicines
+  /*--------------------------------------------------------------*/
+  function find_low_stock_medicines($threshold = 10){
+    global $db;
+    $sql = "SELECT p.*, c.name as category_name ";
+    $sql .= "FROM products p ";
+    $sql .= "LEFT JOIN categories c ON c.id = p.categorie_id ";
+    $sql .= "WHERE p.quantity <= p.low_stock_alert ";
+    $sql .= "OR p.quantity <= {$threshold} ";
+    $sql .= "ORDER BY p.quantity ASC";
+    return find_by_sql($sql);
+  }
+
+  /*--------------------------------------------------------------*/
+  /* Function for Find expiring medicines
+  /*--------------------------------------------------------------*/
+  function find_expiring_medicines($days = 30){
+    global $db;
+    $future_date = date('Y-m-d', strtotime("+{$days} days"));
+    $sql = "SELECT p.*, c.name as category_name, DATEDIFF(p.expiry_date, CURDATE()) as days_until_expiry ";
+    $sql .= "FROM products p ";
+    $sql .= "LEFT JOIN categories c ON c.id = p.categorie_id ";
+    $sql .= "WHERE p.expiry_date IS NOT NULL ";
+    $sql .= "AND p.expiry_date <= '{$future_date}' ";
+    $sql .= "AND p.expiry_date >= CURDATE() ";
+    $sql .= "ORDER BY p.expiry_date ASC";
+    return find_by_sql($sql);
+  }
+
+  /*--------------------------------------------------------------*/
+  /* Function for Find expired medicines
+  /*--------------------------------------------------------------*/
+  function find_expired_medicines(){
+    global $db;
+    $sql = "SELECT p.*, c.name as category_name ";
+    $sql .= "FROM products p ";
+    $sql .= "LEFT JOIN categories c ON c.id = p.categorie_id ";
+    $sql .= "WHERE p.expiry_date IS NOT NULL ";
+    $sql .= "AND p.expiry_date < CURDATE() ";
+    $sql .= "ORDER BY p.expiry_date ASC";
+    return find_by_sql($sql);
+  }
+
 /*--------------------------------------------------------------*/
-/* Function for Generate sales report by two dates
+/* USER MANAGEMENT FUNCTIONS
 /*--------------------------------------------------------------*/
-function find_sale_by_dates($start_date,$end_date){
-  global $db;
-  $start_date  = date("Y-m-d", strtotime($start_date));
-  $end_date    = date("Y-m-d", strtotime($end_date));
-  $sql  = "SELECT s.date, p.name,p.sale_price,p.buy_price,";
-  $sql .= "COUNT(s.product_id) AS total_records,";
-  $sql .= "SUM(s.qty) AS total_sales,";
-  $sql .= "SUM(p.sale_price * s.qty) AS total_saleing_price,";
-  $sql .= "SUM(p.buy_price * s.qty) AS total_buying_price ";
-  $sql .= "FROM sales s ";
-  $sql .= "LEFT JOIN products p ON s.product_id = p.id";
-  $sql .= " WHERE s.date BETWEEN '{$start_date}' AND '{$end_date}'";
-  $sql .= " GROUP BY DATE(s.date),p.name";
-  $sql .= " ORDER BY DATE(s.date) DESC";
-  return $db->query($sql);
-}
-/*--------------------------------------------------------------*/
-/* Function for Generate Daily sales report
-/*--------------------------------------------------------------*/
-function  dailySales($year,$month){
-  global $db;
-  $sql  = "SELECT s.qty,";
-  $sql .= " DATE_FORMAT(s.date, '%Y-%m-%e') AS date,p.name,";
-  $sql .= "SUM(p.sale_price * s.qty) AS total_saleing_price";
-  $sql .= " FROM sales s";
-  $sql .= " LEFT JOIN products p ON s.product_id = p.id";
-  $sql .= " WHERE DATE_FORMAT(s.date, '%Y-%m' ) = '{$year}-{$month}'";
-  $sql .= " GROUP BY DATE_FORMAT( s.date,  '%e' ),s.product_id";
-  return find_by_sql($sql);
-}
-/*--------------------------------------------------------------*/
-/* Function for Generate Monthly sales report
-/*--------------------------------------------------------------*/
-function  monthlySales($year){
-  global $db;
-  $sql  = "SELECT s.qty,";
-  $sql .= " DATE_FORMAT(s.date, '%Y-%m-%e') AS date,p.name,";
-  $sql .= "SUM(p.sale_price * s.qty) AS total_saleing_price";
-  $sql .= " FROM sales s";
-  $sql .= " LEFT JOIN products p ON s.product_id = p.id";
-  $sql .= " WHERE DATE_FORMAT(s.date, '%Y' ) = '{$year}'";
-  $sql .= " GROUP BY DATE_FORMAT( s.date,  '%c' ),s.product_id";
-  $sql .= " ORDER BY date_format(s.date, '%c' ) ASC";
-  return find_by_sql($sql);
-}
 
 /*--------------------------------------------------------------*/
 /* Function to check if username exists
@@ -370,7 +285,7 @@ function register_user($name, $username, $password){
   
   $name = $db->escape($name);
   $username = $db->escape($username);
-  $password_hash = sha1($password); // Using same method as authenticate()
+  $password_hash = sha1($password);
   
   $sql = "INSERT INTO users (name, username, password, user_level, status) ";
   $sql .= "VALUES ('{$name}', '{$username}', '{$password_hash}', 2, 1)";

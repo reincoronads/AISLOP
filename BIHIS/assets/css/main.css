@@ -1,0 +1,120 @@
+/* Color Variables */
+:root {
+    --dark-green: #1a5d1a;
+    --medium-green: #2e8b57;
+    --light-green: #e8f5e8;
+    --accent-green: #3cb371;
+}
+
+/* Layout Styles */
+.sidebar {
+    width: 250px;
+    background: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+}
+.page-content {
+    margin-left: 250px;
+    margin-top: 70px;
+    background: #f8f9fa;
+    min-height: calc(100vh - 70px);
+}
+
+/* Navbar Styling - Green Theme - FIXED */
+.navbar-custom {
+    background: var(--medium-green) !important;
+    height: 70px;
+    box-shadow: 0 2px 10px rgba(26, 93, 26, 0.2);
+}
+
+/* Sidebar Menu Styling - WHITE BACKGROUND WITH DARK TEXT */
+.sidebar-menu {
+    background: #ffffff;
+}
+.sidebar-menu .nav-link {
+    color: #333333 !important;  /* Dark text */
+    border-radius: 8px;
+    margin: 2px 10px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    padding: 12px 15px;
+}
+.sidebar-menu .nav-link:hover {
+    background-color: var(--light-green);
+    color: var(--dark-green) !important;
+    transform: translateX(5px);
+}
+.sidebar-menu .nav-link.active {
+    background-color: var(--dark-green);
+    color: white !important;
+}
+.sidebar-menu .nav-link i {
+    color: var(--medium-green);
+    transition: color 0.3s ease;
+    width: 20px;
+    text-align: center;
+    margin-right: 10px;
+}
+.sidebar-menu .nav-link:hover i {
+    color: var(--dark-green);
+}
+
+/* Submenu Styling - FIXED GREEN COLORS */
+.sidebar-menu .submenu {
+    background: #f8f9fa;
+    border-radius: 5px;
+    margin: 5px 0;
+    padding: 5px 0;
+}
+.sidebar-menu .submenu .nav-link {
+    color: #333333 !important;  /* Dark text for submenu */
+    padding: 8px 15px 8px 30px;
+    font-size: 14px;
+    margin: 1px 5px;
+    font-weight: normal;
+    transition: all 0.2s ease;
+}
+.sidebar-menu .submenu .nav-link:hover {
+    background-color: rgba(232, 245, 232, 0.6); /* Light green background */
+    color: var(--dark-green) !important;        /* Dark green text */
+}
+
+/* Fix for any text-white classes in submenus */
+.sidebar-menu .text-white,
+.sidebar-menu .text-white-50 {
+    color: #333333 !important;  /* Force dark text */
+}
+.sidebar-menu .text-white:hover,
+.sidebar-menu .text-white-50:hover {
+    color: var(--dark-green) !important;
+}
+
+/* User Avatar */
+.user-avatar {
+    background: var(--medium-green);
+    border: 2px solid white;
+}
+
+/* Button Styling */
+.btn-success {
+    background-color: var(--medium-green);
+    border-color: var(--medium-green);
+}
+.btn-success:hover {
+    background-color: var(--dark-green);
+    border-color: var(--dark-green);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+        box-shadow: none;
+    }
+    .page-content {
+        margin-left: 0;
+        margin-top: 0;
+    }
+}
